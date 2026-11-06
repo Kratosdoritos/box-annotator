@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+test-results/
+.env
+
+# your images and labels stay local — never commit patient data
+dataset/*
+!dataset/images/
+dataset/images/*
+!dataset/images/.gitkeep

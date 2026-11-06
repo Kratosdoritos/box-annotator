@@ -1,0 +1,75 @@
+name: tests
+
+on:
+  push:
+    branches: [main]   # not again for a tag: its commit was already tested
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:   # a newer push to the same branch replaces a run still going
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · Python ${{ matrix.python }}${{ matrix.deps == 'oldest' && ' · oldest deps' || '' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.13"]
+        deps: [newest]
+        include:
+          # the lowest versions requirements.txt allows, so the floors it promises stay true
+          - os: ubuntu-latest
+            python: "3.10"
+            deps: oldest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - if: matrix.deps == 'newest'
+        run: python -m pip install -r requirements-dev.txt
+      - if: matrix.deps == 'oldest'
+        shell: bash
+        run: |
+          sed -E 's/\[[^]]*\]//; s/>=/==/' requirements.txt > oldest.txt
+          python -m pip install -r requirements-dev.txt -c oldest.txt
+      # the browser tests drive the real UI in headless Chromium, kept between runs per Playwright version
+      - id: playwright
+        shell: bash
+        run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'Windows' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - if: runner.os == 'Linux'
+        run: python -m playwright install --with-deps chromium
+      - if: runner.os != 'Linux'
+        run: python -m playwright install chromium
+      - run: python -m pytest -q
+      - if: failure()   # a failing browser test leaves a screenshot of the page
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.os }}-${{ matrix.python }}-${{ matrix.deps }}
+          path: test-results/
+          if-no-files-found: ignore
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      # the ruff version pinned in requirements-dev.txt, without the test dependencies
+      - run: python -m pip install "$(grep '^ruff' requirements-dev.txt)"
+      - run: ruff check --output-format=github .

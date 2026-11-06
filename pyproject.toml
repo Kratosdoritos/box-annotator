@@ -1,0 +1,20 @@
+[project]
+name = "box-annotator"
+version = "2.2.1"
+description = "Draw labelled bounding boxes on a folder of images and export them as a COCO or YOLO dataset."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, import order, bugbear, modern syntax, simplifications
+select = ["E", "W", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.isort]
+known-local-folder = ["conftest"]   # the tests' shared helpers

@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest>=7
+httpx2            # the test client on current Starlette
+httpx             # ...and on older Starlette
+pillow
+playwright
+pyyaml            # what Ultralytics reads data.yaml with; a test reads it the same way
+ruff==0.17.3

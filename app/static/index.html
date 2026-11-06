@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Box Annotator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='12' y='22' width='76' height='56' rx='6' fill='none' stroke='%2322c55e' stroke-width='10'/><rect x='12' y='8' width='38' height='18' rx='4' fill='%2322c55e'/></svg>"/>
+<link rel="stylesheet" href="static/style.css"/>
+</head>
+<body>
+<header>
+  <h1>Box Annotator</h1>
+  <span class="pill" id="progress">0 / 0</span>
+  <span class="pill" id="fname">—</span>
+  <span class="hint" title="Drag = draw · 1–9 = class · Click a box, then drag = move · Del = delete · Wheel = zoom · Space+drag = pan · 0 = whole image · Ctrl+Z / Ctrl+Y = undo / redo · ←/→ = image">Drag = draw · 1–9 = class · Click a box, then drag = move · Del = delete · Wheel = zoom · Space+drag = pan · Ctrl+Z = undo · ←/→ = image</span>
+  <span style="margin-left:auto; display:flex; gap:8px;">
+    <button class="pill" id="importBtn">＋ Import</button>
+    <button class="pill" id="exportBtn">⬇ Export</button>
+    <a class="pill link" href="docs" target="_blank" rel="noopener">API docs</a>
+  </span>
+</header>
+<div class="wrap">
+  <div class="side">
+    <div class="classes">
+      <div class="sect"><span>Classes</span><span>boxes</span></div>
+      <div id="cats"></div>
+      <form id="addcat"><input id="catname" placeholder="New class…" maxlength="64" autocomplete="off"/><button>Add</button></form>
+    </div>
+    <div class="sect"><span>Images</span></div>
+    <div class="list" id="side"></div>
+  </div>
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <div class="toolbar">
+      <button class="ghost" id="prev">◀ Prev</button>
+      <button class="ghost" id="next">Next ▶</button>
+      <button class="danger" id="del">Delete box</button>
+      <button class="ghost" id="clear">Clear all</button>
+      <button class="ghost" id="undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+      <button class="ghost" id="redo" title="Redo (Ctrl+Y)">↷ Redo</button>
+      <span class="pill" id="boxcount">0 boxes</span>
+      <button class="ghost" id="zoom" title="Mouse wheel or + / − to zoom · Space+drag or middle-drag to pan · click or 0 to fit">100%</button>
+      <button id="save" style="margin-left:auto;">💾 Save (COCO)</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<dialog id="importDlg">
+  <h2>Import images</h2>
+  <p class="hint">Images are copied into the workspace, so your originals are never changed. A COCO <code>.json</code> in the folder brings its labels along.</p>
+  <div class="drop">
+    <div>Drop a folder or images here</div>
+    <div class="row">
+      <button type="button" id="pickDir">Choose folder</button>
+      <button type="button" class="ghost" id="pickFiles">Choose images</button>
+      <button type="button" class="ghost" id="pickLabels">Import labels (.json)</button>
+    </div>
+  </div>
+  <input type="file" id="dirInput" webkitdirectory multiple hidden/>
+  <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.bmp,.json" multiple hidden/>
+  <input type="file" id="labelInput" accept=".json,application/json" hidden/>
+  <progress id="importBar" value="0" max="1" hidden></progress>
+  <div class="status" id="importStatus"></div>
+  <div class="row end"><span class="hint" id="wsdir" style="margin-right:auto"></span><button type="button" class="ghost" id="importClose">Close</button></div>
+</dialog>
+
+<dialog id="exportDlg">
+  <h2>Export</h2>
+  <fieldset>
+    <legend>Format</legend>
+    <label><input type="radio" name="fmt" value="coco" checked/> COCO JSON <span class="hint">labels only</span></label>
+    <label><input type="radio" name="fmt" value="coco_images"/> COCO + images <span class="hint">a folder you can import again later</span></label>
+    <label><input type="radio" name="fmt" value="yolo"/> YOLO <span class="hint">images, labels and data.yaml</span></label>
+    <label class="sub" id="valRow" hidden>Validation share <input type="number" id="val" min="0" max="0.9" step="0.05" value="0.2"/></label>
+  </fieldset>
+  <fieldset>
+    <legend>Save to</legend>
+    <label><input type="radio" name="dest" value="download" checked/> Download <span class="hint">to your browser's download folder</span></label>
+    <label id="folderOpt"><input type="radio" name="dest" value="folder"/> A folder on this computer</label>
+    <div class="row" id="folderRow"><input id="folder" placeholder="C:\Users\you\Documents" autocomplete="off"/><button type="button" class="ghost" id="browse">Browse…</button></div>
+  </fieldset>
+  <div class="status" id="exportStatus"></div>
+  <div class="row">
+    <button type="button" class="danger" id="clearWs">Clear workspace…</button>
+    <label class="hint"><input type="checkbox" id="keepCls" checked/> keep classes</label>
+    <span style="margin-left:auto"></span>
+    <button type="button" class="ghost" id="exportClose">Close</button>
+    <button type="button" id="doExport">Export</button>
+  </div>
+</dialog>
+<script type="module" src="static/js/main.js"></script>
+</body>
+</html>
